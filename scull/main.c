@@ -15,7 +15,6 @@
 
 MODULE_LICENSE("Dual BSD/GPL");
 
-dev_t dev;
 int scull_major = SCULL_MAJOR;
 int scull_minor = 0;
 int scull_nr_devs = SCULL_NR_DEVS;
@@ -212,6 +211,8 @@ static void scull_setup_cdev(struct scull_dev* dev, int index) {
 
 static void scull_cleanup_module(void) {
     int i;
+    dev_t devno = MKDEV(scull_major, scull_minor);
+
     printk(KERN_NOTICE "Scull_exit Called!\n");
     if(scull_devices) {
         for(i = 0; i < scull_nr_devs; i++) {
@@ -220,22 +221,23 @@ static void scull_cleanup_module(void) {
         }
         kfree(scull_devices);
     }
-    unregister_chrdev_region(dev, scull_nr_devs);
+    unregister_chrdev_region(devno, scull_nr_devs);
 }
 
 static int scull_init_module(void) {
     int i, result;
+    dev_t devno;
 
     printk(KERN_NOTICE "Scull_init Called!\n");
 
     if(scull_major) {
-        dev = MKDEV(scull_major, scull_minor);
-        result = register_chrdev_region(dev, scull_nr_devs, "scull");
+        devno = MKDEV(scull_major, scull_minor);
+        result = register_chrdev_region(devno, scull_nr_devs, "scull");
     }
     else {
-        result = alloc_chrdev_region(&dev, 0, scull_nr_devs, "scull");
-        scull_major = MAJOR(dev);
-        scull_minor = MINOR(dev);
+        result = alloc_chrdev_region(&devno, 0, scull_nr_devs, "scull");
+        scull_major = MAJOR(devno);
+        scull_minor = MINOR(devno);
     }
 
     if(result < 0) {
